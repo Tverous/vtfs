@@ -1,5 +1,6 @@
 obj-m += vtfs.o
-vtfs-objs := fs.o super.o inode.o file.o dir.o extent.o
+#vtfs-objs := fs.o super.o inode.o file.o dir.o extent.o
+vtfs-objs := fs.o super.o inode.o file.o
 
 KDIR ?= /lib/modules/$(shell uname -r)/build
 

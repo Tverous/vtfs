@@ -2,7 +2,9 @@
 #define VTFS_H
 
 // #include <linux/version.h>
-#include <stdint.h>
+//#include <stdint.h>
+
+#define VTFS_BLOCK_SIZE (1 << 12) /* 4 KiB */
 
 struct vtfs_inode
 {
@@ -34,7 +36,7 @@ struct vtfs_superblock {
 
     // uint32_t nr_free_inodes; /* Number of free inodes */
     // uint32_t nr_free_blocks; /* Number of free blocks */
-}
+};
 
 
 // struct vtfs_super_operations {
