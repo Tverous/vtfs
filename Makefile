@@ -2,8 +2,7 @@ KVERSION := $(shell uname -r)
 KERNEL_DIR = /usr/src/linux-$(KVERSION)/
  
 obj-m += vtfs.o
-# vtfs-objs := fs.o super.o inode.o file.o dir.o extent.o
-vtfs-objs := init.o super.o inode.o
+vtfs-objs := init.o super.o inode.o dir.o file.o
 
 MKFS = mkfs.vtfs
 

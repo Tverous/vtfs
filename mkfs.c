@@ -77,6 +77,23 @@ static struct superblock *write_superblock(int fd, struct stat *fstats)
     return sb;
 }
 
+static int write_inode_store(int fd, struct superblock *sb)
+{
+    struct vtfs_inode *root_inode = NULL;
+    char *block = malloc(VTFS_BLOCK_SIZE);
+    if (!block)
+        return -1;
+
+    memset(block, 0, VTFS_BLOCK_SIZE);
+
+    /* Root inode (inode 0) */
+    root_inode = (struct vtfs_inode *)block;
+    
+
+    /* Reset inode store blocks to zero */
+
+}
+
 int main(int argc, char **argv)
 {
     int ret = EXIT_SUCCESS, fd;

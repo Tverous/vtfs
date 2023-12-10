@@ -50,13 +50,13 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
 
     set_nlink(inode, vtfs_inode->i_nlink);
 
-    // TODO
-    // if (S_ISDIR(inode->i_mode))
-    //     inode->i_fop = &vtfs_dir_operations;
-    // else if (S_ISREG(inode->i_mode))
-    //     inode->i_fop = &vtfs_file_operations;
-    // else
-    //     printk(KERN_ERR "vtfs: unknown inode type\n"
+    // TODO: define inode operations
+    if (S_ISDIR(inode->i_mode))
+        inode->i_fop = &vtfs_dir_ops;
+    else if (S_ISREG(inode->i_mode))
+        inode->i_fop = &vtfs_file_ops;
+    else
+        printk(KERN_ERR "vtfs: unknown inode type\n")
 
 
     brelse(bh);

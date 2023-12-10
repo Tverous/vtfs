@@ -53,10 +53,17 @@ struct vtfs_inode {
     uint32_t i_mtime;               // last modify time
     uint32_t i_ctime;               // inode last change time
     uint32_t i_nlink;               // number of hard links
-    // TODO
-    uint32_t i_block[15];           // block pointers
+    // TODO: customed i_blocks
+    // uint32_t i_block[15];           // block pointers
     // char i_data[VTFS_BLOCK_SIZE];   // data
 };
+
+// TODO
+struct vtfs_file {
+    uint32_t inode;
+    char filename[VTFS_MAX_FILE_NAME];
+};
+
 
 // super block functions
 int vtfs_sb_init(struct super_block *sb, void *data, int slient);
@@ -65,6 +72,8 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient);
 struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino);
 
 // file functions
+extern const struct file_operations vtfs_file_ops;
+extern const struct file_operations vtfs_dir_ops;
 
 
 
