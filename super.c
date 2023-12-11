@@ -86,13 +86,17 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     struct vtfs_sb_info *vtfs_sb_data = (struct vtfs_sb_info *)bh->b_data;
 
     // check if the file system is valid
+    printk("vtsb data->magic = %d\n", vtfs_sb_data->magic);
     if (vtfs_sb_data->magic != VTFS_MAGIC) {
+        // printk(KERN_ERR "vtfs: invalid file system\n");
+        printk("vtfs: invalid file system\n");
         return -EINVAL;
     }
     
     // Set super block data
     sb_data = kzalloc(sizeof(struct vtfs_sb_info), GFP_KERNEL);
     if (!sb_data) {
+        printk(KERN_ERR "vtfs: unable to allocate memory for super block\n");
         return -ENOMEM;
     }
 
@@ -108,11 +112,15 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     // allocate and copy blocks pointing by block bitmap
     sb_data->inode_bitmap = kzalloc(sb_data->num_inode_bitmap_block * VTFS_BLOCK_SIZE, GFP_KERNEL);
     if (!sb_data->inode_bitmap) {
+        // printk(KERN_ERR "vtfs: unable to allocate memory for inode bitmap\n");
+        printk("vtfs: unable to allocate memory for inode bitmap\n");
         return -ENOMEM;
     }
     for (int i = 0; i < sb_data->num_inode_bitmap_block; i++) {
         bh = sb_bread(sb, i + 1);
         if (!bh) {
+            // printk(KERN_ERR "vtfs: unable to read inode bitmap block\n");
+            printk("vtfs: unable to read inode bitmap block\n");
             return -EIO;
         }
         memcpy(sb_data->inode_bitmap + i * VTFS_BLOCK_SIZE, bh->b_data, VTFS_BLOCK_SIZE);
@@ -122,11 +130,15 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     // allocate and copy blocks pointing by inode bitmap
     sb_data->block_bitmap = kzalloc(sb_data->num_block_bitmap_block * VTFS_BLOCK_SIZE, GFP_KERNEL);
     if (!sb_data->block_bitmap) {
+        // printk(KERN_ERR "vtfs: unable to allocate memory for block bitmap\n");
+        printk("vtfs: unable to allocate memory for block bitmap\n");
         return -ENOMEM;
     }
     for (int i = 0; i < sb_data->num_block_bitmap_block; i++) {
         bh = sb_bread(sb, i + 1 + sb_data->num_inode_bitmap_block);
         if (!bh) {
+            // printk(KERN_ERR "vtfs: unable to read block bitmap block\n");
+            printk("vtfs: unable to read block bitmap block\n");
             return -EIO;
         }
         memcpy(sb_data->block_bitmap + i * VTFS_BLOCK_SIZE, bh->b_data, VTFS_BLOCK_SIZE);
@@ -143,6 +155,8 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
 
     sb->s_root = d_make_root(root_inode);
     if (!sb->s_root) {
+        // printk(KERN_ERR "vtfs: unable to get root inode\n");
+        printk("vtfs: unable to get root inode\n");
         return -ENOMEM;
     }
 

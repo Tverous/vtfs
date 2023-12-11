@@ -51,12 +51,13 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
     set_nlink(inode, vtfs_inode->i_nlink);
 
     // TODO: define inode operations
+    printf("inode i_mode: %d\n", inode->i_mode);
     if (S_ISDIR(inode->i_mode))
         inode->i_fop = &vtfs_dir_ops;
     else if (S_ISREG(inode->i_mode))
         inode->i_fop = &vtfs_file_ops;
     else
-        printk(KERN_ERR "vtfs: unknown inode type\n")
+        printk(KERN_ERR "vtfs: unknown inode type\n");
 
 
     brelse(bh);

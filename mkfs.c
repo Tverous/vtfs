@@ -63,12 +63,12 @@ static struct superblock *write_superblock(int fd, struct stat *fstats)
     printf(
         "Superblock: (%ld)\n"
         "\tmagic=%#x\n"
-        "\num_blocks=%u\n"
-        "\num_inodes=%u (num_inode_store_block=%u blocks)\n"
-        "\num_block_bitmap_block=%u\n"
-        "\num_inode_bitmap_block=%u\n"
-        "\num_free_inodes=%u\n"
-        "\num_free_blocks=%u\n",
+        "\nnum_blocks=%u\n"
+        "\nnum_inodes=%u (num_inode_store_block=%u blocks)\n"
+        "\nnum_block_bitmap_block=%u\n"
+        "\nnum_inode_bitmap_block=%u\n"
+        "\nnum_free_inodes=%u\n"
+        "\nnum_free_blocks=%u\n",
         sizeof(struct superblock), sb->info.magic, sb->info.num_blocks,
         sb->info.num_inodes, sb->info.num_inode_store_block, sb->info.num_block_bitmap_block,
         sb->info.num_inode_bitmap_block, sb->info.num_free_inodes,
@@ -79,6 +79,7 @@ static struct superblock *write_superblock(int fd, struct stat *fstats)
 
 static int write_inode_store(int fd, struct superblock *sb)
 {
+    int ret = 0;
     struct vtfs_inode *root_inode = NULL;
     char *block = malloc(VTFS_BLOCK_SIZE);
     if (!block)
@@ -91,7 +92,43 @@ static int write_inode_store(int fd, struct superblock *sb)
     
 
     /* Reset inode store blocks to zero */
+    root_inode = (struct vtfs_inode *)block;
+    root_inode->i_mode = (S_IFDIR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH | S_IXUSR | S_IXGRP | S_IXOTH);
+    root_inode->i_blocks = 1;
+    root_inode->i_size = VTFS_BLOCK_SIZE;
+    root_inode->i_atime = root_inode->i_mtime = root_inode->i_ctime = time(NULL);
+    root_inode->i_nlink = 2;
 
+    ret = write(fd, block, VTFS_BLOCK_SIZE);
+    if (ret != VTFS_BLOCK_SIZE) {
+        perror("write(): write root inode failed\n");
+        ret = -1;
+        goto free_block;
+    }
+    
+    /* Reset inode store blocks to zero */
+    memset(block, 0, VTFS_BLOCK_SIZE);
+    for (int i = 1; i < sb->info.num_inode_store_block; i++) {
+        ret = write(fd, block, VTFS_BLOCK_SIZE);
+        if (ret != VTFS_BLOCK_SIZE) {
+            perror("write(): write inode store failed\n");
+            ret = -1;
+            goto free_block;
+        }
+    }
+    ret = 0;
+
+    printf("inode i_mode: %d\n", root_inode->i_mode);
+
+    // printf("Inode store: (%u blocks)\n"
+    //         "Inode size=%ld\n", 
+    //         sb->info.num_inode_store_block, sizeof(struct vtfs_inode));
+
+free_block:
+    free(block);
+
+
+    return ret;
 }
 
 int main(int argc, char **argv)
@@ -137,6 +174,14 @@ int main(int argc, char **argv)
         perror("write_superblock():");
         ret = EXIT_FAILURE;
         goto fclose;
+    }
+
+    /* Write inode store (blocks 1 to num_inode_store_block) */
+    ret = write_inode_store(fd, sb);
+    if (ret) {
+        perror("write_inode_store():");
+        ret = EXIT_FAILURE;
+        goto free_sb;
     }
 
 

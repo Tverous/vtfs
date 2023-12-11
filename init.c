@@ -53,14 +53,24 @@ void vtfs_kill_sb(struct super_block *sb) {
 
 static int __init vtfs_module_init(void)
 {
-    printk(KERN_INFO "Hello, world!\n");
+    int ret;
 
+    printk(KERN_INFO "vtfs: Loading vtfs module\n");
+
+    ret = register_filesystem(&vtfs_type);
+    if (ret != 0) {
+        printk(KERN_ERR "vtfs: Failed to register file system\n");
+        return ret;
+    }
+
+    printk(KERN_INFO "vtfs: File system registered\n");
     return 0;
 }
 
 static void __exit vtfs_module_exit(void)
 {
-    printk(KERN_INFO "Goodbye, world!\n");
+    unregister_filesystem(&vtfs_type);
+    printk(KERN_INFO "vtfs: File system unregistered\n");
 }
 
 
