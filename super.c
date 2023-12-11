@@ -28,14 +28,16 @@ static void vtfs_put_super(struct super_block *sb)
 
     // TODO
     // Free any in-memory structures specific to your file system
-    kfree(sb_data->inode_bitmap);
-    kfree(sb_data->block_bitmap);
-    kfree(sb_data);
+    if (sb_data) {
+        kfree(sb_data->inode_bitmap);
+        kfree(sb_data->block_bitmap);
+        kfree(sb_data);
+    }
 
-    // Call file system-agnostic cleanup
-    kill_block_super(sb); // Or kill_litter_super(sb), depending on your needs
+    // TODO: Call file system-agnostic cleanup
+    //kill_block_super(sb); // Or kill_litter_super(sb), depending on your needs
 
-    printk("vtfs: super block destroyed\n");
+    //printk("vtfs: super block destroyed\n");
 }
 
 static int vtfs_sync_fs(struct super_block *sb, int wait)
@@ -87,7 +89,7 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     struct vtfs_sb_info *vtfs_sb_data = (struct vtfs_sb_info *)bh->b_data;
 
     // check if the file system is valid
-    printk("vtsb data->magic = %d\n", vtfs_sb_data->magic);
+    printk("vtsb data->magic = %x\n", vtfs_sb_data->magic);
     if (vtfs_sb_data->magic != VTFS_MAGIC) {
         // printk(KERN_ERR "vtfs: invalid file system\n");
         printk("vtfs: invalid file system\n");
@@ -111,6 +113,8 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     sb_data->num_inode_store_block = vtfs_sb_data->num_inode_store_block;
     sb_data->num_block_bitmap_block = vtfs_sb_data->num_block_bitmap_block;
     sb_data->num_inode_bitmap_block = vtfs_sb_data->num_inode_bitmap_block;
+    // TODO
+    sb->s_fs_info = sb_data;
 
     brelse(bh);
 
@@ -156,10 +160,6 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
 
         brelse(bh);
     }
-
-
-    // TODO
-    sb->s_fs_info = sb_data;
 
     root_inode = vtfs_get_inode(sb, 1);
     if (!root_inode) {

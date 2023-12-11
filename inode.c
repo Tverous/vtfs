@@ -13,7 +13,14 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
 
     uint32_t inode_block = ino / VTFS_INODES_PER_BLOCK + 1;
     uint32_t inode_offset = ino % VTFS_INODES_PER_BLOCK;
+    int ret = 0;
 
+    /* Get a locked inode from Linux */
+    inode = iget_locked(sb, ino);
+    if (!inode) {
+        printk(KERN_ERR "vtfs: unable to get inode\n");
+        return ERR_PTR(-ENOMEM);
+    }
 
     // Read inode from disk
     bh = sb_bread(sb, inode_block);
@@ -21,13 +28,6 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
         printk(KERN_ERR "vtfs: unable to read inode block\n");
         ret = -EIO;
         goto failed;
-    }
-
-    /* Get a locked inode from Linux */
-    inode = iget_locked(sb, ino);
-    if (!inode) {
-        printk(KERN_ERR "vtfs: unable to get inode\n");
-        return ERR_PTR(-ENOMEM);
     }
 
     /* Fill inode with data from disk */
