@@ -1,6 +1,7 @@
 KVERSION := $(shell uname -r)
 KERNEL_DIR = /usr/src/linux-$(KVERSION)/
- 
+#KERNEL_DIR ?= /lib/modules/$(shell uname -r)/build
+
 obj-m += vtfs.o
 vtfs-objs := init.o super.o inode.o dir.o file.o
 

@@ -69,6 +69,7 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     struct buffer_head *bh;
     struct vtfs_sb_info *sb_data;
     struct inode *root_inode = NULL;
+    int  ret = 0;
 
     // Init super block
     sb->s_magic = VTFS_MAGIC;
@@ -90,14 +91,16 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     if (vtfs_sb_data->magic != VTFS_MAGIC) {
         // printk(KERN_ERR "vtfs: invalid file system\n");
         printk("vtfs: invalid file system\n");
-        return -EINVAL;
+        ret = -EINVAL;
+        goto release;
     }
     
     // Set super block data
     sb_data = kzalloc(sizeof(struct vtfs_sb_info), GFP_KERNEL);
     if (!sb_data) {
         printk(KERN_ERR "vtfs: unable to allocate memory for super block\n");
-        return -ENOMEM;
+        ret = -ENOMEM;
+        goto release;
     }
 
     // Set super block data
@@ -109,21 +112,27 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     sb_data->num_block_bitmap_block = vtfs_sb_data->num_block_bitmap_block;
     sb_data->num_inode_bitmap_block = vtfs_sb_data->num_inode_bitmap_block;
 
+    brelse(bh);
+
     // allocate and copy blocks pointing by block bitmap
     sb_data->inode_bitmap = kzalloc(sb_data->num_inode_bitmap_block * VTFS_BLOCK_SIZE, GFP_KERNEL);
     if (!sb_data->inode_bitmap) {
         // printk(KERN_ERR "vtfs: unable to allocate memory for inode bitmap\n");
         printk("vtfs: unable to allocate memory for inode bitmap\n");
-        return -ENOMEM;
+        ret = -ENOMEM;
+        goto free_sb_data;
     }
     for (int i = 0; i < sb_data->num_inode_bitmap_block; i++) {
         bh = sb_bread(sb, i + 1);
         if (!bh) {
             // printk(KERN_ERR "vtfs: unable to read inode bitmap block\n");
             printk("vtfs: unable to read inode bitmap block\n");
-            return -EIO;
+            ret = -EIO;
+            goto free_ifree;
         }
         memcpy(sb_data->inode_bitmap + i * VTFS_BLOCK_SIZE, bh->b_data, VTFS_BLOCK_SIZE);
+
+        brelse(bh);
     }
     
 
@@ -132,16 +141,20 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     if (!sb_data->block_bitmap) {
         // printk(KERN_ERR "vtfs: unable to allocate memory for block bitmap\n");
         printk("vtfs: unable to allocate memory for block bitmap\n");
-        return -ENOMEM;
+        ret = -ENOMEM;
+        goto free_ifree;
     }
     for (int i = 0; i < sb_data->num_block_bitmap_block; i++) {
         bh = sb_bread(sb, i + 1 + sb_data->num_inode_bitmap_block);
         if (!bh) {
             // printk(KERN_ERR "vtfs: unable to read block bitmap block\n");
             printk("vtfs: unable to read block bitmap block\n");
-            return -EIO;
+            ret = -EIO;
+            goto free_bfree;
         }
         memcpy(sb_data->block_bitmap + i * VTFS_BLOCK_SIZE, bh->b_data, VTFS_BLOCK_SIZE);
+
+        brelse(bh);
     }
 
 
@@ -150,15 +163,30 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
 
     root_inode = vtfs_get_inode(sb, 1);
     if (!root_inode) {
-        return -ENOMEM;
+        ret = PTR_ERR(root_inode);
+        goto free_bfree;
     }
 
     sb->s_root = d_make_root(root_inode);
     if (!sb->s_root) {
         // printk(KERN_ERR "vtfs: unable to get root inode\n");
         printk("vtfs: unable to get root inode\n");
-        return -ENOMEM;
+        ret = -ENOMEM;
+        goto iput;
     }
 
     return 0;
+
+iput:
+    iput(root_inode);
+free_bfree:
+    kfree(sb_data->block_bitmap);
+free_ifree:
+    kfree(sb_data->inode_bitmap);
+free_sb_data:
+    kfree(sb_data);
+release:
+    brelse(bh);
+
+    return ret;
 }
