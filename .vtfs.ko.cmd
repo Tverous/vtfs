@@ -1,0 +1,1 @@
+cmd_/home/tverous/works/vtfs.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o /home/tverous/works/vtfs.ko /home/tverous/works/vtfs.o /home/tverous/works/vtfs.mod.o;  true

@@ -7,8 +7,9 @@
 
 static const struct inode_operations vtfs_inode_ops ={
     .lookup = simple_lookup,
-    .create = simple_create,
-    .mkdir = simple_mkdir,
+    // TODO
+    // .create = simple_create,
+    // .mkdir = simple_mkdir,
     .rmdir = simple_rmdir,
     .rename = simple_rename,
     .unlink = simple_unlink,
@@ -20,14 +21,14 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
     struct vtfs_inode *vtfs_inode = NULL;
     struct inode *inode = NULL;
 
-    uint32_t inode_block = ino / VTFS_INODES_PER_BLOCK + 1;
+    struct vtfs_sb_info *sbi = sb->s_fs_info;
+
+    uint32_t inode_block = (ino / VTFS_INODES_PER_BLOCK) + 1;
     uint32_t inode_offset = ino % VTFS_INODES_PER_BLOCK;
 
-
-    // Read inode from disk
-    bh = sb_bread(sb, inode_block);
-    if (!bh) {
-        printk(KERN_ERR "vtfs: unable to read inode block\n");
+    // fail if inode is out of range
+    if (ino >= sbi->num_inodes) {
+        printk(KERN_ERR "vtfs: inode out of range\n");
         return NULL;
     }
 
@@ -38,16 +39,33 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
         return NULL;
     }
 
+
+    bh = sb_bread(sb, inode_block);
+    if (!bh) {
+        printk(KERN_ERR "vtfs: unable to read inode block\n");
+        return NULL;
+    }   
+    vtfs_inode = (struct vtfs_inode *)bh->b_data;
+    vtfs_inode += inode_offset;
+
+    // printk("vtfs: inode uid: %d\n", inode->i_uid);
+    // printk("vtfs: inode gid: %d\n", inode->i_gid);
+    printk("vtfs: inode mode: %d\n", vtfs_inode->i_mode);
+    printk("vtfs: inode size: %lld\n", vtfs_inode->i_size);
+    printk("vtfs: inode blocks: %lld\n", vtfs_inode->i_blocks);
+    printk("vtfs: inode nlink: %d\n", vtfs_inode->i_nlink);
+
     /* Fill inode with data from disk */
-    vtfs_inode = (struct vtfs_inode *)bh->b_data + inode_offset;
-    // inode->i_ino = ino;
+    inode->i_ino = ino;
     inode->i_sb = sb;
     // TODO
     inode->i_op = &vtfs_inode_ops;
 
+    
+
     inode->i_mode = vtfs_inode->i_mode;
-    // inode->i_uid = vtfs_inode->i_uid;
-    // inode->i_gid = vtfs_inode->i_gid;
+    i_uid_write(inode, vtfs_inode->i_uid);
+    i_gid_write(inode, vtfs_inode->i_gid);
     inode->i_size = vtfs_inode->i_size;
     inode->i_blocks = vtfs_inode->i_blocks;
     
@@ -59,8 +77,7 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
 
     set_nlink(inode, vtfs_inode->i_nlink);
 
-    // TODO: define inode operations
-    printk("vtfs: inode mode: %d\n", inode->i_mode);
+    
     if (S_ISDIR(inode->i_mode))
         inode->i_fop = &vtfs_dir_ops;
     else if (S_ISREG(inode->i_mode))

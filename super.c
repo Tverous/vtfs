@@ -67,7 +67,8 @@ static int vtfs_statfs(struct dentry *dentry, struct kstatfs *buf)
 int vtfs_sb_init(struct super_block *sb, void *data, int slient)
 {
     struct buffer_head *bh;
-    struct vtfs_sb_info *sb_data;
+    struct vtfs_sb_info *sb_from_disk;
+    struct vtfs_sb_info *sb_to_mem;
     struct inode *root_inode = NULL;
 
     // Init super block
@@ -83,81 +84,90 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     }
 
     // Copy super block data from disk to memory
-    struct vtfs_sb_info *vtfs_sb_data = (struct vtfs_sb_info *)bh->b_data;
+    sb_from_disk = (struct vtfs_sb_info *)bh->b_data;
 
     // check if the file system is valid
-    printk("vtsb data->magic = %d\n", vtfs_sb_data->magic);
-    if (vtfs_sb_data->magic != VTFS_MAGIC) {
+    if (sb_from_disk->magic != VTFS_MAGIC) {
         // printk(KERN_ERR "vtfs: invalid file system\n");
         printk("vtfs: invalid file system\n");
         return -EINVAL;
     }
     
     // Set super block data
-    sb_data = kzalloc(sizeof(struct vtfs_sb_info), GFP_KERNEL);
-    if (!sb_data) {
+    sb_to_mem = kzalloc(sizeof(struct vtfs_sb_info), GFP_KERNEL);
+    if (!sb_to_mem) {
         printk(KERN_ERR "vtfs: unable to allocate memory for super block\n");
         return -ENOMEM;
     }
 
     // Set super block data
-    sb_data->num_blocks = vtfs_sb_data->num_blocks;
-    sb_data->num_inodes = vtfs_sb_data->num_inodes;
-    sb_data->num_free_blocks = vtfs_sb_data->num_free_blocks;
-    sb_data->num_free_inodes = vtfs_sb_data->num_free_inodes;
-    sb_data->num_inode_store_block = vtfs_sb_data->num_inode_store_block;
-    sb_data->num_block_bitmap_block = vtfs_sb_data->num_block_bitmap_block;
-    sb_data->num_inode_bitmap_block = vtfs_sb_data->num_inode_bitmap_block;
+    sb_to_mem->magic = sb_from_disk->magic;
 
-    printk("vtfs: num_blocks = %d\n", sb_data->num_blocks);
-    printk("vtfs: num_inodes = %d\n", sb_data->num_inodes);
-    printk("vtfs: num_free_blocks = %d\n", sb_data->num_free_blocks);
-    printk("vtfs: num_free_inodes = %d\n", sb_data->num_free_inodes);
-    printk("vtfs: num_inode_store_block = %d\n", sb_data->num_inode_store_block);
-    printk("vtfs: num_block_bitmap_block = %d\n", sb_data->num_block_bitmap_block);
-    printk("vtfs: num_inode_bitmap_block = %d\n", sb_data->num_inode_bitmap_block);
+    sb_to_mem->num_blocks = sb_from_disk->num_blocks;
+    sb_to_mem->num_inodes = sb_from_disk->num_inodes;
+    sb_to_mem->num_free_blocks = sb_from_disk->num_free_blocks;
+    sb_to_mem->num_free_inodes = sb_from_disk->num_free_inodes;
+    sb_to_mem->num_inode_store_block = sb_from_disk->num_inode_store_block;
+    sb_to_mem->num_block_bitmap_block = sb_from_disk->num_block_bitmap_block;
+    sb_to_mem->num_inode_bitmap_block = sb_from_disk->num_inode_bitmap_block;
+    // TODO
+    sb->s_fs_info = sb_to_mem;
+
+    brelse(bh);
+    
+    printk("vtfs: magic = %x\n", sb_to_mem->magic);
+    printk("vtfs: num_blocks = %d\n", sb_to_mem->num_blocks);
+    printk("vtfs: num_inodes = %d\n", sb_to_mem->num_inodes);
+    printk("vtfs: num_free_blocks = %d\n", sb_to_mem->num_free_blocks);
+    printk("vtfs: num_free_inodes = %d\n", sb_to_mem->num_free_inodes);
+    printk("vtfs: num_inode_store_block = %d\n", sb_to_mem->num_inode_store_block);
+    printk("vtfs: num_block_bitmap_block = %d\n", sb_to_mem->num_block_bitmap_block);
+    printk("vtfs: num_inode_bitmap_block = %d\n", sb_to_mem->num_inode_bitmap_block);
 
     // allocate and copy blocks pointing by block bitmap
-    sb_data->inode_bitmap = kzalloc(sb_data->num_inode_bitmap_block * VTFS_BLOCK_SIZE, GFP_KERNEL);
-    if (!sb_data->inode_bitmap) {
+    sb_to_mem->inode_bitmap = kzalloc(sb_to_mem->num_inode_bitmap_block * VTFS_BLOCK_SIZE, GFP_KERNEL);
+    if (!sb_to_mem->inode_bitmap) {
         // printk(KERN_ERR "vtfs: unable to allocate memory for inode bitmap\n");
         printk("vtfs: unable to allocate memory for inode bitmap\n");
         return -ENOMEM;
     }
-    for (int i = 0; i < sb_data->num_inode_bitmap_block; i++) {
-        bh = sb_bread(sb, i + 1);
+    for (int i = 0; i < sb_to_mem->num_inode_bitmap_block; i++) {
+        bh = sb_bread(sb, i + 1 + sb_to_mem->num_inode_bitmap_block);
         if (!bh) {
             // printk(KERN_ERR "vtfs: unable to read inode bitmap block\n");
             printk("vtfs: unable to read inode bitmap block\n");
             return -EIO;
         }
-        memcpy(sb_data->inode_bitmap + i * VTFS_BLOCK_SIZE, bh->b_data, VTFS_BLOCK_SIZE);
+        memcpy((void *)sb_to_mem->inode_bitmap + i * VTFS_BLOCK_SIZE, bh->b_data, VTFS_BLOCK_SIZE);
+
+        brelse(bh);
     }
     
 
     // allocate and copy blocks pointing by inode bitmap
-    sb_data->block_bitmap = kzalloc(sb_data->num_block_bitmap_block * VTFS_BLOCK_SIZE, GFP_KERNEL);
-    if (!sb_data->block_bitmap) {
+    sb_to_mem->block_bitmap = kzalloc(sb_to_mem->num_block_bitmap_block * VTFS_BLOCK_SIZE, GFP_KERNEL);
+    if (!sb_to_mem->block_bitmap) {
         // printk(KERN_ERR "vtfs: unable to allocate memory for block bitmap\n");
         printk("vtfs: unable to allocate memory for block bitmap\n");
         return -ENOMEM;
     }
-    for (int i = 0; i < sb_data->num_block_bitmap_block; i++) {
-        bh = sb_bread(sb, i + 1 + sb_data->num_inode_bitmap_block);
+    for (int i = 0; i < sb_to_mem->num_block_bitmap_block; i++) {
+        bh = sb_bread(sb, i + 1 + sb_to_mem->num_inode_bitmap_block + sb_to_mem->num_inode_bitmap_block);
         if (!bh) {
             // printk(KERN_ERR "vtfs: unable to read block bitmap block\n");
             printk("vtfs: unable to read block bitmap block\n");
             return -EIO;
         }
-        memcpy(sb_data->block_bitmap + i * VTFS_BLOCK_SIZE, bh->b_data, VTFS_BLOCK_SIZE);
+        
+        memcpy((void *)sb_to_mem->block_bitmap + i * VTFS_BLOCK_SIZE, bh->b_data, VTFS_BLOCK_SIZE);
+
+        brelse(bh);
     }
 
-
-    // TODO
-    sb->s_fs_info = sb_data;
-
+    // get root inode in ino 1 according to mkfs
     root_inode = vtfs_get_inode(sb, 1);
     if (!root_inode) {
+        printk(KERN_ERR "vtfs: unable to get root inode\n");
         return -ENOMEM;
     }
 

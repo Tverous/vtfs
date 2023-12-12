@@ -20,7 +20,7 @@
     *-----------------------*
 */
 
-#define VTFS_BLOCK_SIZE 1024
+#define VTFS_BLOCK_SIZE (1 << 12)   /* 4 KiB */
 #define VTFS_MAX_FILE_NAME 255
 #define VTFS_MAX_FILE_SIZE 1024 * 1024 * 1024 // 1GB
 #define VTFS_INODES_PER_BLOCK (VTFS_BLOCK_SIZE / sizeof(struct vtfs_inode))
@@ -50,6 +50,10 @@ struct vtfs_inode {
     // TODO
     // uint32_t i_ino;                 // inode number
 
+    uint32_t i_uid;                 // owner uid
+    uint32_t i_gid;                 // owner gid
+    
+
     uint32_t i_mode;                // file mode
     uint32_t i_blocks;              // number of blocks
     uint32_t i_size;                // file size
@@ -62,6 +66,12 @@ struct vtfs_inode {
     // uint32_t i_block[15];           // block pointers
     // char i_data[VTFS_BLOCK_SIZE];   // data
 };
+
+// TODO
+// struct vtfsfs_inode_info {
+//     uint32_t index_block;
+//     struct inode vfs_inode;
+// };
 
 // TODO
 struct vtfs_file {
