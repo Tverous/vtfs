@@ -109,6 +109,14 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     sb_data->num_block_bitmap_block = vtfs_sb_data->num_block_bitmap_block;
     sb_data->num_inode_bitmap_block = vtfs_sb_data->num_inode_bitmap_block;
 
+    printk("vtfs: num_blocks = %d\n", sb_data->num_blocks);
+    printk("vtfs: num_inodes = %d\n", sb_data->num_inodes);
+    printk("vtfs: num_free_blocks = %d\n", sb_data->num_free_blocks);
+    printk("vtfs: num_free_inodes = %d\n", sb_data->num_free_inodes);
+    printk("vtfs: num_inode_store_block = %d\n", sb_data->num_inode_store_block);
+    printk("vtfs: num_block_bitmap_block = %d\n", sb_data->num_block_bitmap_block);
+    printk("vtfs: num_inode_bitmap_block = %d\n", sb_data->num_inode_bitmap_block);
+
     // allocate and copy blocks pointing by block bitmap
     sb_data->inode_bitmap = kzalloc(sb_data->num_inode_bitmap_block * VTFS_BLOCK_SIZE, GFP_KERNEL);
     if (!sb_data->inode_bitmap) {

@@ -34,17 +34,21 @@ struct vtfs_sb_info {
     uint32_t num_free_blocks;           // number of free blocks
     uint32_t num_free_inodes;           // number of free inodes
 
-    uint32_t num_inode_store_block;     // number of blocks for inode store
+    uint32_t num_inode_store_block;     // number of blocks for inodes that store metadata
+
     uint32_t num_block_bitmap_block;    // number of blocks for block bitmap
     uint32_t num_inode_bitmap_block;    // number of blocks for inode bitmap
 
+    // TODO: in-memory block bitmap
+#ifdef __KERNEL__
     unsigned long *block_bitmap;        // block bitmap
     unsigned long *inode_bitmap;        // inode bitmap
+#endif
 };
 
 struct vtfs_inode {
     // TODO
-    uint32_t i_ino;                 // inode number
+    // uint32_t i_ino;                 // inode number
 
     uint32_t i_mode;                // file mode
     uint32_t i_blocks;              // number of blocks
@@ -53,6 +57,7 @@ struct vtfs_inode {
     uint32_t i_mtime;               // last modify time
     uint32_t i_ctime;               // inode last change time
     uint32_t i_nlink;               // number of hard links
+    uint32_t index_block;           // point to the first block of the file
     // TODO: customed i_blocks
     // uint32_t i_block[15];           // block pointers
     // char i_data[VTFS_BLOCK_SIZE];   // data

@@ -5,6 +5,15 @@
 
 #include "vtfs.h"
 
+static const struct inode_operations vtfs_inode_ops ={
+    .lookup = simple_lookup,
+    .create = simple_create,
+    .mkdir = simple_mkdir,
+    .rmdir = simple_rmdir,
+    .rename = simple_rename,
+    .unlink = simple_unlink,
+};
+
 struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
 {
     struct buffer_head *bh = NULL;
@@ -31,10 +40,10 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
 
     /* Fill inode with data from disk */
     vtfs_inode = (struct vtfs_inode *)bh->b_data + inode_offset;
-    inode->i_ino = ino;
+    // inode->i_ino = ino;
     inode->i_sb = sb;
     // TODO
-    // inode->i_op = &vtfs_inode_ops;
+    inode->i_op = &vtfs_inode_ops;
 
     inode->i_mode = vtfs_inode->i_mode;
     // inode->i_uid = vtfs_inode->i_uid;
@@ -51,7 +60,7 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
     set_nlink(inode, vtfs_inode->i_nlink);
 
     // TODO: define inode operations
-    printf("inode i_mode: %d\n", inode->i_mode);
+    printk("vtfs: inode mode: %d\n", inode->i_mode);
     if (S_ISDIR(inode->i_mode))
         inode->i_fop = &vtfs_dir_ops;
     else if (S_ISREG(inode->i_mode))
