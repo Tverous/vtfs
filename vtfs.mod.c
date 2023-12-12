@@ -36,16 +36,16 @@ __used __section("__versions") = {
 	{ 0x9ffe51c6, "d_make_root" },
 	{ 0xdcd16a21, "sb_set_blocksize" },
 	{ 0x37a0cba, "kfree" },
-	{ 0x6cb61583, "generic_file_write_iter" },
 	{ 0x287ff013, "register_filesystem" },
 	{ 0xbdfb6dbb, "__fentry__" },
 	{ 0xa6de336b, "kill_block_super" },
 	{ 0xc1bff251, "unlock_new_inode" },
 	{ 0x122c3a7e, "_printk" },
+	{ 0x4c9e045e, "simple_setattr" },
 	{ 0xaadc978b, "make_kuid" },
 	{ 0xe57ce94, "simple_unlink" },
+	{ 0x8336ca99, "simple_getattr" },
 	{ 0x94eb9b93, "__brelse" },
-	{ 0x2cb94dbd, "generic_file_read_iter" },
 	{ 0x458b8a32, "set_nlink" },
 	{ 0x10ad97a2, "__bread_gfp" },
 	{ 0x5b8239ca, "__x86_return_thunk" },
@@ -53,7 +53,9 @@ __used __section("__versions") = {
 	{ 0x6a44a1ab, "generic_read_dir" },
 	{ 0x42656fd3, "mount_bdev" },
 	{ 0x9ba0a933, "simple_lookup" },
+	{ 0x45a93003, "generic_file_open" },
 	{ 0xd07ae855, "kmalloc_trace" },
+	{ 0x12f73c0c, "simple_link" },
 	{ 0x9b0b90a6, "generic_file_llseek" },
 	{ 0xeb233a45, "__kmalloc" },
 	{ 0x86892d74, "kmalloc_caches" },
@@ -63,4 +65,4 @@ __used __section("__versions") = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "525C77C3EEA655D3E2B5A6F");
+MODULE_INFO(srcversion, "015AA9CEDC71E840A8F6E10");

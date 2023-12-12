@@ -21,9 +21,11 @@
 */
 
 #define VTFS_BLOCK_SIZE (1 << 12)   /* 4 KiB */
+#define VTFS_INODES_PER_BLOCK (VTFS_BLOCK_SIZE / sizeof(struct vtfs_inode))
+
 #define VTFS_MAX_FILE_NAME 255
 #define VTFS_MAX_FILE_SIZE 1024 * 1024 * 1024 // 1GB
-#define VTFS_INODES_PER_BLOCK (VTFS_BLOCK_SIZE / sizeof(struct vtfs_inode))
+#define VTFS_MAX_SUBFILES 16
 
 struct vtfs_sb_info {
     uint32_t magic;                     // magic number
@@ -78,6 +80,10 @@ struct vtfs_file {
     uint32_t inode;
     char filename[VTFS_MAX_FILE_NAME];
 };
+
+struct vtfs_dir {
+    struct vtfs_file files[VTFS_MAX_SUBFILES];
+}
 
 
 // super block functions

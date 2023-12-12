@@ -165,7 +165,7 @@ int vtfs_sb_init(struct super_block *sb, void *data, int slient)
     }
 
     // get root inode in ino 1 according to mkfs
-    root_inode = vtfs_get_inode(sb, 1);
+    root_inode = vtfs_get_inode(sb, 0);
     if (!root_inode) {
         printk(KERN_ERR "vtfs: unable to get root inode\n");
         return -ENOMEM;

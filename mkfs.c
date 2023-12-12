@@ -104,12 +104,12 @@ static int write_inode_store(int fd, struct superblock *sb)
 
     /* Root inode (inode 1) */
     root_inode = (struct vtfs_inode *)block;
-    /*
-     * Use inode 1 for root.
-     * If system use glibc, readdir will skip inode 0, and vfs also avoid
-     * using inode 0
-     */
-    root_inode += 1;
+    // /*
+    //  * Use inode 1 for root.
+    //  * If system use glibc, readdir will skip inode 0, and vfs also avoid
+    //  * using inode 0
+    //  */
+    // // root_inode += 1;
     
     root_inode->i_uid = 0;
     root_inode->i_gid = 100;
@@ -315,21 +315,21 @@ int main(int argc, char **argv)
         goto free_sb;
     }
 
-    // /* Write inode bitmap */
-    // ret = write_inode_bitmap(fd, sb);
-    // if (ret) {
-    //     perror("write_inode_bitmap():");
-    //     ret = EXIT_FAILURE;
-    //     goto free_sb;
-    // }
+    /* Write inode bitmap */
+    ret = write_inode_bitmap(fd, sb);
+    if (ret) {
+        perror("write_inode_bitmap():");
+        ret = EXIT_FAILURE;
+        goto free_sb;
+    }
 
-    // /* Write block bitmap */
-    // ret = write_block_bitmap(fd, sb);
-    // if (ret) {
-    //     perror("write_block_bitmap():");
-    //     ret = EXIT_FAILURE;
-    //     goto free_sb;
-    // }
+    /* Write block bitmap */
+    ret = write_block_bitmap(fd, sb);
+    if (ret) {
+        perror("write_block_bitmap():");
+        ret = EXIT_FAILURE;
+        goto free_sb;
+    }
 
 
 free_sb:

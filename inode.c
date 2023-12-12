@@ -5,14 +5,20 @@
 
 #include "vtfs.h"
 
-static const struct inode_operations vtfs_inode_ops ={
+static const struct inode_operations vtfs_dir_inode_ops = {
     .lookup = simple_lookup,
-    // TODO
-    // .create = simple_create,
+    .link = simple_link,
+    .unlink = simple_unlink,
+    // .symlink = simple_symlink,
     // .mkdir = simple_mkdir,
     .rmdir = simple_rmdir,
+    // .mknod = simple_mknod,
     .rename = simple_rename,
-    .unlink = simple_unlink,
+};
+
+static const struct inode_operations vtfs_file_inode_ops = {
+    .setattr = simple_setattr,
+    .getattr = simple_getattr,
 };
 
 struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
@@ -59,7 +65,7 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
     inode->i_ino = ino;
     inode->i_sb = sb;
     // TODO
-    inode->i_op = &vtfs_inode_ops;
+    // inode->i_op = &vtfs_inode_ops;
 
     
 
@@ -78,10 +84,15 @@ struct inode *vtfs_get_inode(struct super_block *sb, unsigned long ino)
     set_nlink(inode, vtfs_inode->i_nlink);
 
     
-    if (S_ISDIR(inode->i_mode))
+    if (S_ISDIR(inode->i_mode)) {
+        inode->i_op = &vtfs_dir_inode_ops;
         inode->i_fop = &vtfs_dir_ops;
-    else if (S_ISREG(inode->i_mode))
+    }
+    else if (S_ISREG(inode->i_mode)) {
+        inode->i_op = &vtfs_file_inode_ops;
         inode->i_fop = &vtfs_file_ops;
+        // inode->i_mapping->a_ops = &vtfs_aops;
+    }
     else
         printk(KERN_ERR "vtfs: unknown inode type\n");
 
